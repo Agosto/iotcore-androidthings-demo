@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:layout_margin="16dp">
+
+    <TextView
+        android:layout_marginTop="16dp"
+        style="@style/Base.TextAppearance.AppCompat.Body1"
+        android:text="Device Id:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <TextView
+        android:layout_margin="16dp"
+        style="@style/Base.TextAppearance.AppCompat.Headline"
+        android:id="@+id/deviceId"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:layout_marginTop="16dp"
+        style="@style/Base.TextAppearance.AppCompat.Body1"
+        android:text="Server:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <TextView
+        android:layout_margin="16dp"
+        style="@style/Base.TextAppearance.AppCompat.Body2"
+        android:id="@+id/server"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:layout_marginTop="16dp"
+        style="@style/Base.TextAppearance.AppCompat.Body1"
+        android:text="Project Id:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <TextView
+        android:layout_margin="16dp"
+        style="@style/Base.TextAppearance.AppCompat.Body2"
+        android:id="@+id/projectId"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+
+    <TextView
+        android:layout_marginTop="16dp"
+        style="@style/Base.TextAppearance.AppCompat.Body1"
+        android:text="Registry Id:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <TextView
+        android:layout_margin="16dp"
+        style="@style/Base.TextAppearance.AppCompat.Body2"
+        android:id="@+id/registryId"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:layout_marginTop="16dp"
+        style="@style/Base.TextAppearance.AppCompat.Body1"
+        android:text="Last Publish:"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+    <TextView
+        android:layout_margin="16dp"
+        style="@style/Base.TextAppearance.AppCompat.Body2"
+        android:id="@+id/publishDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+
+</LinearLayout>
+
