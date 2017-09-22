@@ -54,7 +54,8 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, mDeviceKeys.publicKey.getFormat());
         Log.d(TAG, mDeviceKeys.publicKey.getAlgorithm());
         Log.d(TAG, mDeviceKeys.publicKey.toString());*/
-        mDeviceSettings.encodedPublicKey = mDeviceKeys.encodedCertificate();
+
+        mDeviceSettings.encodedPublicKey = "-----BEGIN CERTIFICATE-----\n"+mDeviceKeys.encodedCertificate()+"-----END CERTIFICATE-----\n";
         //Log.d(TAG, mDeviceSettings.encodedPublicKey);
         WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
         mDeviceSettings.ipAddress = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
@@ -202,8 +203,9 @@ public class MainActivity extends AppCompatActivity {
                     }
                 } catch (InterruptedException | MqttException e) {
                     Log.w(TAG,e.toString());
-                    //connectIotCore();
-                    e.printStackTrace();
+                    Log.d(TAG, "reconnecting...");
+                    connectIotCore();
+                    //e.printStackTrace();
                     return;
                 }
                 // start again;
