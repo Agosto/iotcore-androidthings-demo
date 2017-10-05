@@ -17,11 +17,18 @@ import android.text.format.Formatter;
 import android.util.Log;
 import android.widget.TextView;
 
+import com.agosto.iotcorethings.DeviceConfigServer;
+import com.agosto.iotcorethings.DeviceKeys;
+import com.agosto.iotcorethings.DeviceSettings;
+import com.agosto.iotcorethings.EddystoneAdvertiser;
+import com.agosto.iotcorethings.IotCoreMqtt;
+
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
@@ -40,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //resetDevice();
+        resetDevice();
         setTitle(getString(R.string.app_name) + " v" + BuildConfig.VERSION_NAME + " build " + BuildConfig.VERSION_CODE);
         mDeviceSettings = DeviceSettings.fromContext(this);
         //PeripheralManagerService service = new PeripheralManagerService();
@@ -152,7 +159,7 @@ public class MainActivity extends AppCompatActivity {
      */
     protected void connectIotCore() {
         try {
-            mMqttClient = IotCoreMqtt.connect(mDeviceSettings.projectId, mDeviceSettings.registryId, mDeviceSettings.deviceId, mDeviceKeys.privateKey);
+            mMqttClient = IotCoreMqtt.connect(mDeviceSettings.projectId, mDeviceSettings.registryId, mDeviceSettings.deviceId, mDeviceKeys.getPrivateKey());
             mMqttClient.subscribe(IotCoreMqtt.configTopic(mDeviceSettings.deviceId), new IMqttMessageListener() {
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
@@ -201,6 +208,8 @@ public class MainActivity extends AppCompatActivity {
                         mMqttClient.publish(IotCoreMqtt.telemetryTopic(mDeviceSettings.deviceId), message);
                         Thread.sleep(1000);
                     }
+                    mLastPublish = new Date().toString();
+                    updateSettingsUI();
                 } catch (InterruptedException | MqttException e) {
                     Log.w(TAG,e.toString());
                     Log.d(TAG, "reconnecting...");

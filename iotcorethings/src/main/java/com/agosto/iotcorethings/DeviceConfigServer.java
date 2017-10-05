@@ -1,9 +1,8 @@
-package com.agosto.iotcorethingsdemo;
+package com.agosto.iotcorethings;
 
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.agosto.iotcorethingsdemo.DeviceSettings;
 import com.google.android.things.devicemanagement.DeviceManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

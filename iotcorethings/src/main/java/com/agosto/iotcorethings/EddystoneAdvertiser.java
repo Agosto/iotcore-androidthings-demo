@@ -1,4 +1,4 @@
-package com.agosto.iotcorethingsdemo;
+package com.agosto.iotcorethings;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.le.AdvertiseCallback;

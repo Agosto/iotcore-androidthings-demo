@@ -1,4 +1,4 @@
-package com.agosto.iotcorethingsdemo;
+package com.agosto.iotcorethings;
 
 import android.content.Context;
 import android.content.Intent;
@@ -22,21 +22,21 @@ public class DeviceSettings {
 
     @SerializedName("deviceId")
     @Expose
-    String deviceId = "";
+    public String deviceId = "";
 
     @SerializedName("encodedPublicKey")
     @Expose
-    String encodedPublicKey = "";
+    public String encodedPublicKey = "";
 
     @SerializedName("projectId")
     @Expose
-    String projectId = "";
+    public String projectId = "";
 
     @SerializedName("registryId")
     @Expose
-    String registryId = "";
+    public String registryId = "";
 
-    String ipAddress= "";
+    public String ipAddress= "";
 
     private Context context = null;
     // e0b51921-8504-494f-b5aa-f1f055fd41f0
@@ -88,7 +88,7 @@ public class DeviceSettings {
         broadcastSync();
     }
 
-    boolean isConfigured() {
+    public boolean isConfigured() {
         return !projectId.isEmpty() && !registryId.isEmpty();
     }
 

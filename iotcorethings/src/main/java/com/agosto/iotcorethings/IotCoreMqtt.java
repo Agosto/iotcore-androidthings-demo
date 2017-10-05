@@ -1,4 +1,4 @@
-package com.agosto.iotcorethingsdemo;
+package com.agosto.iotcorethings;
 
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;

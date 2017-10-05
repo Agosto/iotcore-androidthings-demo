@@ -1,4 +1,4 @@
-package com.agosto.iotcorethingsdemo;
+package com.agosto.iotcorethings;
 
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
@@ -28,8 +28,8 @@ import javax.security.auth.x500.X500Principal;
 public class DeviceKeys {
     private static final String TAG = "DeviceKeys";
     private static final String ALIAS = "iotcoredemo";
-    PrivateKey privateKey;
-    PublicKey publicKey;
+    private PrivateKey privateKey;
+    private PublicKey publicKey;
     private Certificate certificate;
 
     public DeviceKeys() {
@@ -71,7 +71,7 @@ public class DeviceKeys {
         }
     }
 
-    public PrivateKey getStoredKey() {
+    private PrivateKey getStoredKey() {
 
         try {
             KeyStore ks = null;
@@ -101,4 +101,11 @@ public class DeviceKeys {
         }
     }
 
+    public PrivateKey getPrivateKey() {
+        return privateKey;
+    }
+
+    public PublicKey getPublicKey() {
+        return publicKey;
+    }
 }
