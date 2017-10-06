@@ -21,7 +21,9 @@ import com.agosto.iotcorethings.DeviceConfigServer;
 import com.agosto.iotcorethings.DeviceKeys;
 import com.agosto.iotcorethings.DeviceSettings;
 import com.agosto.iotcorethings.EddystoneAdvertiser;
+import com.agosto.iotcorethings.IotCoreDeviceConfig;
 import com.agosto.iotcorethings.IotCoreMqtt;
+import com.google.gson.Gson;
 
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -47,26 +49,16 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        resetDevice();
+        //resetDevice();
         setTitle(getString(R.string.app_name) + " v" + BuildConfig.VERSION_NAME + " build " + BuildConfig.VERSION_CODE);
         mDeviceSettings = DeviceSettings.fromContext(this);
-        //PeripheralManagerService service = new PeripheralManagerService();
-        //Log.d(TAG, "Available GPIO: " + service.getGpioList());
-        // if not support kill app.  next start it will be enabled
         if (!checkBluetoothSupport()) {
             finish();
         }
         mDeviceKeys = new DeviceKeys();
-        /*Log.d(TAG, mDeviceKeys.privateKey.toString());
-        Log.d(TAG, mDeviceKeys.publicKey.getFormat());
-        Log.d(TAG, mDeviceKeys.publicKey.getAlgorithm());
-        Log.d(TAG, mDeviceKeys.publicKey.toString());*/
-
         mDeviceSettings.encodedPublicKey = "-----BEGIN CERTIFICATE-----\n"+mDeviceKeys.encodedCertificate()+"-----END CERTIFICATE-----\n";
-        //Log.d(TAG, mDeviceSettings.encodedPublicKey);
         WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
         mDeviceSettings.ipAddress = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
-        //Log.d(TAG, mDeviceSettings.ipAddress);
     }
 
     /**
@@ -116,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mEddystoneAdvertiser = new EddystoneAdvertiser(bluetoothAdapter);
+        mWebServer = new DeviceConfigServer(8080, mDeviceSettings);
         return true;
     }
 
@@ -124,15 +117,26 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         updateSettingsUI();
-        mWebServer = new DeviceConfigServer(8080, mDeviceSettings);
-        mWebServer.start();
+        enableConfigServer(mDeviceSettings.isConfigured());
         IntentFilter intentFilter = new IntentFilter(DeviceSettings.ACTION_UPDATE);
         LocalBroadcastManager.getInstance(this).registerReceiver(onUpdateReceiver,intentFilter);
-        if(mEddystoneAdvertiser !=null) {
-            mEddystoneAdvertiser.startAdvertising("http://" + mDeviceSettings.ipAddress);
-        }
         if(mDeviceSettings.isConfigured()) {
             connectIotCore();
+        }
+    }
+
+    void enableConfigServer(boolean enable) {
+        String url;
+        if(enable) {
+            mWebServer.start();
+            url = "http://" + mDeviceSettings.ipAddress;
+        } else {
+            mWebServer.stop();
+            url = "http://" + mDeviceSettings.deviceId;
+        }
+        if(mEddystoneAdvertiser !=null) {
+            mEddystoneAdvertiser.stopAdvertising();
+            mEddystoneAdvertiser.startAdvertising(url);
         }
     }
 
@@ -154,6 +158,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+
     /**
      * connects to Iot Core via Mqtt, subscribes to config topic, and starts publishing to telemetry topic
      */
@@ -163,7 +168,10 @@ public class MainActivity extends AppCompatActivity {
             mMqttClient.subscribe(IotCoreMqtt.configTopic(mDeviceSettings.deviceId), new IMqttMessageListener() {
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
-                    Log.d(TAG,message.toString());
+                    String json = new String(message.getPayload());
+                    IotCoreDeviceConfig deviceConfig = new Gson().fromJson(json, IotCoreDeviceConfig.class);
+                    Log.d(TAG,deviceConfig.toString());
+                    enableConfigServer(deviceConfig.configServerOn);
                 }
             });
             startPublishing(1000);

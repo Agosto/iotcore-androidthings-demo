@@ -48,14 +48,22 @@ public class DeviceConfigServer implements Runnable {
      * This method starts the web server listening to the specified port.
      */
     public void start() {
-        mIsRunning = true;
-        new Thread(this).start();
+        if(mIsRunning) {
+            Log.d(TAG,"server is already running");
+        } else {
+            mIsRunning = true;
+            new Thread(this).start();
+        }
     }
 
     /**
      * This method stops the web server
      */
     public void stop() {
+        if(!mIsRunning) {
+            Log.d(TAG,"server is NOT running");
+            return;
+        }
         try {
             mIsRunning = false;
             if (null != mServerSocket) {
@@ -194,4 +202,9 @@ public class DeviceConfigServer implements Runnable {
         String registryId = "";
     }
 
+    public boolean isRunning() {
+        return mIsRunning;
+    }
 }
+
+
