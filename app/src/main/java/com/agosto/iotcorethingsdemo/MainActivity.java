@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity {
         mDeviceSettings.encodedPublicKey = "-----BEGIN CERTIFICATE-----\n"+mDeviceKeys.encodedCertificate()+"-----END CERTIFICATE-----\n";
         WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
         mDeviceSettings.ipAddress = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+        mWebServer = new DeviceConfigServer(8080, mDeviceSettings);
     }
 
     /**
@@ -108,7 +109,6 @@ public class MainActivity extends AppCompatActivity {
         }
 
         mEddystoneAdvertiser = new EddystoneAdvertiser(bluetoothAdapter);
-        mWebServer = new DeviceConfigServer(8080, mDeviceSettings);
         return true;
     }
 
@@ -117,7 +117,7 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         updateSettingsUI();
-        enableConfigServer(mDeviceSettings.isConfigured());
+        enableConfigServer(!mDeviceSettings.isConfigured());
         IntentFilter intentFilter = new IntentFilter(DeviceSettings.ACTION_UPDATE);
         LocalBroadcastManager.getInstance(this).registerReceiver(onUpdateReceiver,intentFilter);
         if(mDeviceSettings.isConfigured()) {

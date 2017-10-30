@@ -2,7 +2,7 @@ apply plugin: 'com.android.application'
 
 android {
     compileSdkVersion 26
-    buildToolsVersion "26.0.1"
+    //buildToolsVersion "26.0.1"
 
     def versionMajor = 1
     def versionMinor = 0
@@ -19,8 +19,9 @@ android {
     }
 
     applicationVariants.all { variant ->
-        variant.outputs.each { output ->
-            output.outputFile = new File(output.outputFile.parentFile, output.outputFile.name.replace(".apk", "-${variant.versionCode}.apk"));
+        variant.outputs.all {
+            // output.outputFile = new File(output.outputFile.parentFile, output.outputFile.name.replace("app","iotcore-provisioning").replace(".apk", "-${variant.versionCode}.apk"));
+            outputFileName = "iotcore-things-${variant.name}-${variant.versionName}.apk"
         }
     }
 
