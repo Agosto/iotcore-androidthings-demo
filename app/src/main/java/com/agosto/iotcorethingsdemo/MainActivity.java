@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -18,11 +19,14 @@ import android.util.Log;
 import android.widget.TextView;
 
 import com.agosto.iotcorethings.DeviceConfigServer;
+import com.agosto.iotcorethings.DeviceEvents;
 import com.agosto.iotcorethings.DeviceKeys;
 import com.agosto.iotcorethings.DeviceSettings;
 import com.agosto.iotcorethings.EddystoneAdvertiser;
 import com.agosto.iotcorethings.IotCoreDeviceConfig;
 import com.agosto.iotcorethings.IotCoreMqtt;
+import com.google.android.things.contrib.driver.apa102.Apa102;
+import com.google.android.things.contrib.driver.rainbowhat.RainbowHat;
 import com.google.gson.Gson;
 
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
@@ -30,8 +34,12 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
+import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -49,9 +57,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        //resetDevice();
         setTitle(getString(R.string.app_name) + " v" + BuildConfig.VERSION_NAME + " build " + BuildConfig.VERSION_CODE);
         mDeviceSettings = DeviceSettings.fromContext(this);
+        // need to restart app to get permission the first time
         if (!checkBluetoothSupport()) {
             finish();
         }
@@ -59,7 +67,7 @@ public class MainActivity extends AppCompatActivity {
         mDeviceSettings.encodedPublicKey = "-----BEGIN CERTIFICATE-----\n"+mDeviceKeys.encodedCertificate()+"-----END CERTIFICATE-----\n";
         WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
         mDeviceSettings.ipAddress = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
-        mWebServer = new DeviceConfigServer(8080, mDeviceSettings);
+        mWebServer = new DeviceConfigServer(8080, mDeviceSettings, new DeviceEvents(this));
     }
 
     /**
@@ -69,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         TextView textView = findViewById(R.id.deviceId);
         textView.setText(mDeviceSettings.deviceId);
         textView = findViewById(R.id.server);
-        textView.setText("http://" + mDeviceSettings.ipAddress + ":8080");
+        textView.setText(getString(R.string.config_url,mDeviceSettings.ipAddress));
         textView = findViewById(R.id.registryId);
         textView.setText(mDeviceSettings.registryId);
         textView = findViewById(R.id.projectId);
@@ -118,8 +126,9 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         updateSettingsUI();
         enableConfigServer(!mDeviceSettings.isConfigured());
-        IntentFilter intentFilter = new IntentFilter(DeviceSettings.ACTION_UPDATE);
-        LocalBroadcastManager.getInstance(this).registerReceiver(onUpdateReceiver,intentFilter);
+        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
+        localBroadcastManager.registerReceiver(onUpdateReceiver,new IntentFilter(DeviceEvents.DEVICE_PROVISIONED));
+        localBroadcastManager.registerReceiver(onIdentifyRequest,new IntentFilter(DeviceEvents.IDENTIFY_REQUEST));
         if(mDeviceSettings.isConfigured()) {
             connectIotCore();
         }
@@ -143,7 +152,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onPause() {
         mWebServer.stop();
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(onUpdateReceiver);
+        LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
+        localBroadcastManager.unregisterReceiver(onUpdateReceiver);
+        localBroadcastManager.unregisterReceiver(onIdentifyRequest);
         if(mEddystoneAdvertiser !=null)
             mEddystoneAdvertiser.stopAdvertising();
         disconnectTotCore();
@@ -155,6 +166,13 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             updateSettingsUI();
             connectIotCore();
+        }
+    };
+
+    private BroadcastReceiver onIdentifyRequest = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ledStripOn(5000);
         }
     };
 
@@ -170,8 +188,14 @@ public class MainActivity extends AppCompatActivity {
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
                     String json = new String(message.getPayload());
                     IotCoreDeviceConfig deviceConfig = new Gson().fromJson(json, IotCoreDeviceConfig.class);
-                    Log.d(TAG,deviceConfig.toString());
+                    Log.d(TAG,json);
                     enableConfigServer(deviceConfig.configServerOn);
+                    mPublishHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            ledStripOn(5000,Color.YELLOW);
+                        }
+                    });
                 }
             });
             startPublishing(1000);
@@ -202,23 +226,16 @@ public class MainActivity extends AppCompatActivity {
         mPublishHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
+                ledStripOn(5000, Color.GREEN);
                 try {
-                    int numMessages = 10;
-                    // Publish numMessages messages to the MQTT bridge, at a rate of 1 per second.
-                    for (int i = 1; i <= numMessages; ++i) {
-                        String payload = String.format(Locale.getDefault(),"%s/%s-payload-%d", mDeviceSettings.registryId, mDeviceSettings.deviceId, i);
-                        System.out.format("Publishing message %d/%d: '%s'\n", i, numMessages, payload);
-
-                        // Publish "payload" to the MQTT topic. qos=1 means at least once delivery. Cloud IoT Core
-                        // also supports qos=0 for at most once delivery.
-                        MqttMessage message = new MqttMessage(payload.getBytes());
-                        message.setQos(1);
-                        mMqttClient.publish(IotCoreMqtt.telemetryTopic(mDeviceSettings.deviceId), message);
-                        Thread.sleep(1000);
-                    }
+                    String payload = String.format(Locale.getDefault(),"%s %s", mDeviceSettings.deviceId, getISO8601StringForDate(new Date()));
+                    Log.d(TAG,"Publishing message: " + payload);
+                    MqttMessage message = new MqttMessage(payload.getBytes());
+                    message.setQos(1);
+                    mMqttClient.publish(IotCoreMqtt.telemetryTopic(mDeviceSettings.deviceId), message);
                     mLastPublish = new Date().toString();
                     updateSettingsUI();
-                } catch (InterruptedException | MqttException e) {
+                } catch (MqttException e) {
                     Log.w(TAG,e.toString());
                     Log.d(TAG, "reconnecting...");
                     connectIotCore();
@@ -231,9 +248,76 @@ public class MainActivity extends AppCompatActivity {
         },delayMs);
     }
 
-    protected void resetDevice() {
-        PreferenceManager.getDefaultSharedPreferences(this).edit().clear().apply();
-        DeviceKeys.deleteKeys();
+    private static String getISO8601StringForDate(Date date) {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US);
+        dateFormat.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return dateFormat.format(date);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        ledStripOff();
+        if(mLedstrip!=null) {
+            try {
+                mLedstrip.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            mLedstrip = null;
+        }
+    }
+
+    private Apa102 mLedstrip;
+
+    public void ledStripOn(int offDelay) {
+        ledStripOn(offDelay,0);
+    }
+
+    public void ledStripOn(int offDelay, int color) {
+        Handler handler = new Handler();
+        try {
+            if(mLedstrip==null)
+                mLedstrip = RainbowHat.openLedStrip();
+            mLedstrip.setBrightness(5);
+            int[] rainbow = new int[RainbowHat.LEDSTRIP_LENGTH];
+            for (int i = 0; i < rainbow.length; i++) {
+                rainbow[i] = color == 0 ? Color.HSVToColor(255, new float[]{i * 360.f / rainbow.length, 1.0f, 1.0f}) : color;
+            }
+            mLedstrip.write(rainbow);
+            mLedstrip.write(rainbow);
+// Close the device when done.
+            //ledstrip.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                ledStripOff();
+            }
+        },offDelay);
+    }
+
+    public void ledStripOff() {
+        if(mLedstrip==null) {
+            return;
+        }
+        try {
+            //Apa102 ledstrip = RainbowHat.openLedStrip();
+            mLedstrip.setBrightness(0);
+            int[] rainbow = new int[RainbowHat.LEDSTRIP_LENGTH];
+            for (int i = 0; i < rainbow.length; i++) {
+                rainbow[i] = Color.BLACK;
+            }
+            mLedstrip.write(rainbow);
+            mLedstrip.write(rainbow);
+
+// Close the device when done.
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
 }

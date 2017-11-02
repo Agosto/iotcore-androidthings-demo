@@ -1,10 +1,8 @@
 package com.agosto.iotcorethings;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 import com.google.gson.annotations.Expose;
@@ -12,13 +10,9 @@ import com.google.gson.annotations.SerializedName;
 
 import java.util.UUID;
 
-/**
- * Created by chris on 7/31/17.
- */
 
 public class DeviceSettings {
     private static final String TAG = "DeviceSettings";
-    public static final String ACTION_UPDATE = "ACTION_UPDATE";
 
     @SerializedName("deviceId")
     @Expose
@@ -67,7 +61,7 @@ public class DeviceSettings {
         registryId = sharedPreferences.getString("registryId","");
     }
 
-    public void saveToPreferences() {
+    private void saveToPreferences() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(context);
         sharedPreferences.edit()
                 .putString("deviceId",deviceId)
@@ -85,15 +79,11 @@ public class DeviceSettings {
         this.registryId = registryId;
         this.projectId = projectId;
         saveToPreferences();
-        broadcastSync();
+        new DeviceEvents(context).broadCastProvisioned();
     }
 
     public boolean isConfigured() {
         return !projectId.isEmpty() && !registryId.isEmpty();
     }
 
-    private void broadcastSync() {
-        Intent intent = new Intent(ACTION_UPDATE);
-        LocalBroadcastManager.getInstance(context).sendBroadcast(intent);
-    }
 }

@@ -1,5 +1,6 @@
 package com.agosto.iotcorethings;
 
+import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -19,6 +20,7 @@ public class DeviceConfigServer implements Runnable {
 
     private static final String TAG = "DeviceConfigServer";
     private DeviceSettings mDeviceSettings;
+    private DeviceEvents mDeviceEvents;
 
     /**
      * The port number we listen to
@@ -39,9 +41,10 @@ public class DeviceConfigServer implements Runnable {
     /**
      * WebServer constructor.
      */
-    public DeviceConfigServer(int port, DeviceSettings deviceSettings) {
+    public DeviceConfigServer(int port, DeviceSettings deviceSettings, DeviceEvents deviceEvents) {
         mPort = port;
         mDeviceSettings = deviceSettings;
+        mDeviceEvents = deviceEvents;
     }
 
     /**
@@ -119,6 +122,8 @@ public class DeviceConfigServer implements Runnable {
                     method = "DELETE";
                 } else if (line.startsWith("POST")) {
                     method = "POST";
+                } else if (line.startsWith("OPTIONS")) {
+                    method = "OPTIONS";
                 } else if (line.startsWith(contentHeader)) {
                     contentLength = Integer.parseInt(line.substring(contentHeader.length()));
                 }
@@ -143,6 +148,10 @@ public class DeviceConfigServer implements Runnable {
                 mDeviceSettings.reset();
                 DeviceKeys.deleteKeys();
                 DeviceManager.reboot();
+            }
+
+            if(method.equals("OPTIONS")) {
+                mDeviceEvents.broadCastIdentifyRequest();
             }
 
             this.deviceRepResponse(socket);

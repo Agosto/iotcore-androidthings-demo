@@ -39,6 +39,6 @@ dependencies {
     compile 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
     compile 'io.jsonwebtoken:jjwt:0.7.0'
     compile 'com.google.code.gson:gson:2.8.1'
-    compile 'com.google.android.things.contrib:driver-rainbowhat:0.4'
+    compile 'com.google.android.things.contrib:driver-rainbowhat:0.5'
 
 }

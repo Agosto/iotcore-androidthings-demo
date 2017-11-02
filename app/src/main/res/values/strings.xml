@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">IOT Core Things Demo</string>
+    <string name="config_url">http://%1$s:8080</string>
 </resources>
