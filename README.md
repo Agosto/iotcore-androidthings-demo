@@ -1,4 +1,5 @@
 # Google Cloud IoT Core Demo Android Things App
+
 Android Things that demonstrating how to provision an device into [Google Cloud IoT Core](https://cloud.google.com/iot-core/).
 
 This project is the device half of the Cloud IoT Core demo. The provisioning mobile app can be found here [TODO: LINK TO ANDROID APP](TODO)
@@ -9,11 +10,30 @@ This project is the device half of the Cloud IoT Core demo. The provisioning mob
 - MicroSD card of 16 GB or higher
 - Micro USB power adapter.
 - (optional) HDMI display and cable
-- (optional) [Blinkt!](https://shop.pimoroni.com/products/blinkt) RGB LED Strip
+- (optional) [Rainbow HAT](https://shop.pimoroni.com/products/rainbow-hat-for-android-things)
 
 ## Device Setup
 
+###For Development:
+
+1. Flash Your Raspberry Pi with the latest Android Things Image:
 https://developer.android.com/things/hardware/raspberrypi.html
+
+2. Connect device to your wifi network
+
+3. Connect with ADB
+
+4. Build/Run!
+
+###For Demo Only:
+
+1.  Download Iot Core Provisioning Demo Image
+
+2.  Follow the same step as above to flash your device but use the download image instead.
+
+3.  Add device to wifi network (same as above)
+
+4.  Reboot until you see a blue light flash (then it's ready)
 
 ### Operation Overview
 
@@ -40,10 +60,37 @@ https://developer.android.com/things/hardware/raspberrypi.html
 }
 ```
 
-- `OPTIONS` acts as normal but also lights the LED (if connected) purple.
+- `OPTIONS` acts as normal but also lights the LED (if connected) raindbow colors.
 - `DELETE` deletes key pairs and device settings and reboots device
 
 4. Once device has a `projectId` and `registryId` (either after a POST or present on startup), then device will:
 - Subscribe to the IoT Core device config topic
 - Publish data 1/min to the telemetry topic
 - reconnect when token expires
+
+
+### Rainbow HAT
+Optionally you can attached a Rainbow Hat to your Raspberry Pi 3 and receive visual feedback.
+
+#### LED Indicators
+Red - Device is not ready to operate.  Should only flash for a brief sec on startup.  If persists longer, something is mis-configured (see setup).
+
+Blue - Device is ready for provisioning or operation. The LED will flash blue for 5 seconds.
+
+Green - Device is publishing telemetry data to IOT Core
+
+Yellow - Device is receiving a config update from IOT Core.
+
+Rainbow - Device is receiving an HTTP `OPTIONS` request
+
+Under normal operation, you should see the following Indicators.
+
+**Unprovisioned Device**
+- Red
+- Blue (5 seconds)
+
+**Provisioned Device**
+- Red
+- Blue
+- Yellow (once on startup and every time a new config is published)
+- Green (every 1 min)

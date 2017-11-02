@@ -17,7 +17,7 @@ import java.nio.ByteOrder;
 import java.util.Locale;
 
 /**
- * todo: find what I base this off and credit.
+ * Most of this is copied over from https://github.com/google/eddystone
  */
 public class EddystoneAdvertiser {
 
