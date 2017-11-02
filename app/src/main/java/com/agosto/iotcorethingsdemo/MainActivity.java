@@ -8,25 +8,23 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
-import android.text.format.Formatter;
 import android.util.Log;
 import android.widget.TextView;
 
-import com.agosto.iotcorethings.DeviceConfigServer;
 import com.agosto.iotcorethings.DeviceEvents;
 import com.agosto.iotcorethings.DeviceKeys;
 import com.agosto.iotcorethings.DeviceSettings;
-import com.agosto.iotcorethings.EddystoneAdvertiser;
 import com.agosto.iotcorethings.IotCoreDeviceConfig;
 import com.agosto.iotcorethings.IotCoreMqtt;
+import com.agosto.iotcorethings.IotCoreProvisioning;
 import com.google.android.things.contrib.driver.apa102.Apa102;
+import com.google.android.things.contrib.driver.pwmspeaker.Speaker;
 import com.google.android.things.contrib.driver.rainbowhat.RainbowHat;
+import com.google.android.things.pio.Gpio;
 import com.google.gson.Gson;
 
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
@@ -44,12 +42,8 @@ import java.util.TimeZone;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
 
-    private DeviceConfigServer mWebServer;
-    private EddystoneAdvertiser mEddystoneAdvertiser;
     String mLastPublish = "";
-
-    DeviceSettings mDeviceSettings;
-    DeviceKeys mDeviceKeys;
+    IotCoreProvisioning mIotCoreProvisioning;
     MqttClient mMqttClient;
     Handler mPublishHandler = new Handler();
 
@@ -58,30 +52,29 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setTitle(getString(R.string.app_name) + " v" + BuildConfig.VERSION_NAME + " build " + BuildConfig.VERSION_CODE);
-        mDeviceSettings = DeviceSettings.fromContext(this);
         // need to restart app to get permission the first time
-        if (!checkBluetoothSupport()) {
+        if (checkBluetoothSupport()) {
+            mIotCoreProvisioning = IotCoreProvisioning.getInstance(this);
+        } else {
+            // TODO: reboot? or restart app.
+            ledStripOn(10000, Color.RED);
             finish();
         }
-        mDeviceKeys = new DeviceKeys();
-        mDeviceSettings.encodedPublicKey = "-----BEGIN CERTIFICATE-----\n"+mDeviceKeys.encodedCertificate()+"-----END CERTIFICATE-----\n";
-        WifiManager wm = (WifiManager) getSystemService(WIFI_SERVICE);
-        mDeviceSettings.ipAddress = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
-        mWebServer = new DeviceConfigServer(8080, mDeviceSettings, new DeviceEvents(this));
     }
 
     /**
      * update the TextViews
      */
     public void updateSettingsUI() {
+        DeviceSettings deviceSettings = mIotCoreProvisioning.getDeviceSettings();
         TextView textView = findViewById(R.id.deviceId);
-        textView.setText(mDeviceSettings.deviceId);
+        textView.setText(deviceSettings.deviceId);
         textView = findViewById(R.id.server);
-        textView.setText(getString(R.string.config_url,mDeviceSettings.ipAddress));
+        textView.setText(getString(R.string.config_url,deviceSettings.ipAddress));
         textView = findViewById(R.id.registryId);
-        textView.setText(mDeviceSettings.registryId);
+        textView.setText(deviceSettings.registryId);
         textView = findViewById(R.id.projectId);
-        textView.setText(mDeviceSettings.projectId);
+        textView.setText(deviceSettings.projectId);
         textView = findViewById(R.id.publishDate);
         textView.setText(mLastPublish);
     }
@@ -93,6 +86,11 @@ public class MainActivity extends AppCompatActivity {
      */
     private boolean checkBluetoothSupport() {
         BluetoothManager bluetoothManager = (BluetoothManager) getSystemService(BLUETOOTH_SERVICE);
+        if(bluetoothManager==null) {
+            Log.w(TAG, "Failed to get BluetoothManager");
+            return false;
+        }
+
         BluetoothAdapter bluetoothAdapter = bluetoothManager.getAdapter();
 
         if (bluetoothAdapter == null) {
@@ -116,7 +114,6 @@ public class MainActivity extends AppCompatActivity {
             Log.d(TAG,"BLE advertising not supported on this device");
         }
 
-        mEddystoneAdvertiser = new EddystoneAdvertiser(bluetoothAdapter);
         return true;
     }
 
@@ -125,38 +122,24 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         updateSettingsUI();
-        enableConfigServer(!mDeviceSettings.isConfigured());
+        mIotCoreProvisioning.resume();
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         localBroadcastManager.registerReceiver(onUpdateReceiver,new IntentFilter(DeviceEvents.DEVICE_PROVISIONED));
         localBroadcastManager.registerReceiver(onIdentifyRequest,new IntentFilter(DeviceEvents.IDENTIFY_REQUEST));
-        if(mDeviceSettings.isConfigured()) {
+        if(mIotCoreProvisioning.isConfigured()) {
             connectIotCore();
-        }
-    }
-
-    void enableConfigServer(boolean enable) {
-        String url;
-        if(enable) {
-            mWebServer.start();
-            url = "http://" + mDeviceSettings.ipAddress;
         } else {
-            mWebServer.stop();
-            url = "http://" + mDeviceSettings.deviceId;
-        }
-        if(mEddystoneAdvertiser !=null) {
-            mEddystoneAdvertiser.stopAdvertising();
-            mEddystoneAdvertiser.startAdvertising(url);
+            ledStripOn(5000,Color.BLUE);
+            blueLedOn(5000);
         }
     }
 
     @Override
     public void onPause() {
-        mWebServer.stop();
+        mIotCoreProvisioning.pause();
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         localBroadcastManager.unregisterReceiver(onUpdateReceiver);
         localBroadcastManager.unregisterReceiver(onIdentifyRequest);
-        if(mEddystoneAdvertiser !=null)
-            mEddystoneAdvertiser.stopAdvertising();
         disconnectTotCore();
         super.onPause();
     }
@@ -173,6 +156,10 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             ledStripOn(5000);
+            greenLedOn(5000);
+            blueLedOn(4000);
+            redLedOn(3000);
+
         }
     };
 
@@ -181,19 +168,22 @@ public class MainActivity extends AppCompatActivity {
      * connects to Iot Core via Mqtt, subscribes to config topic, and starts publishing to telemetry topic
      */
     protected void connectIotCore() {
+        DeviceSettings deviceSettings = mIotCoreProvisioning.getDeviceSettings();
+        DeviceKeys deviceKeys = mIotCoreProvisioning.getDeviceKeys();
         try {
-            mMqttClient = IotCoreMqtt.connect(mDeviceSettings.projectId, mDeviceSettings.registryId, mDeviceSettings.deviceId, mDeviceKeys.getPrivateKey());
-            mMqttClient.subscribe(IotCoreMqtt.configTopic(mDeviceSettings.deviceId), new IMqttMessageListener() {
+            mMqttClient = IotCoreMqtt.connect(deviceSettings.projectId, deviceSettings.registryId, deviceSettings.deviceId, deviceKeys.getPrivateKey());
+            mMqttClient.subscribe(IotCoreMqtt.configTopic(deviceSettings.deviceId), new IMqttMessageListener() {
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
                     String json = new String(message.getPayload());
                     IotCoreDeviceConfig deviceConfig = new Gson().fromJson(json, IotCoreDeviceConfig.class);
                     Log.d(TAG,json);
-                    enableConfigServer(deviceConfig.configServerOn);
+                    mIotCoreProvisioning.enableConfigServer(deviceConfig.configServerOn);
                     mPublishHandler.post(new Runnable() {
                         @Override
                         public void run() {
                             ledStripOn(5000,Color.YELLOW);
+                            blueLedOn(5000);
                         }
                     });
                 }
@@ -227,12 +217,14 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 ledStripOn(5000, Color.GREEN);
+                greenLedOn(5000);
+                DeviceSettings deviceSettings = mIotCoreProvisioning.getDeviceSettings();
                 try {
-                    String payload = String.format(Locale.getDefault(),"%s %s", mDeviceSettings.deviceId, getISO8601StringForDate(new Date()));
+                    String payload = String.format(Locale.getDefault(),"%s %s", deviceSettings.deviceId, getISO8601StringForDate(new Date()));
                     Log.d(TAG,"Publishing message: " + payload);
                     MqttMessage message = new MqttMessage(payload.getBytes());
                     message.setQos(1);
-                    mMqttClient.publish(IotCoreMqtt.telemetryTopic(mDeviceSettings.deviceId), message);
+                    mMqttClient.publish(IotCoreMqtt.telemetryTopic(deviceSettings.deviceId), message);
                     mLastPublish = new Date().toString();
                     updateSettingsUI();
                 } catch (MqttException e) {
@@ -267,6 +259,8 @@ public class MainActivity extends AppCompatActivity {
             mLedstrip = null;
         }
     }
+
+    // TODO: move rainbow hat methods into another class.
 
     private Apa102 mLedstrip;
 
@@ -318,6 +312,46 @@ public class MainActivity extends AppCompatActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    void redLedOn(int delay) {
+        try {
+            ledOn(RainbowHat.openLedRed(), delay);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void blueLedOn(int delay) {
+        try {
+            ledOn(RainbowHat.openLedBlue(), delay);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void greenLedOn(int delay) {
+        try {
+            ledOn(RainbowHat.openLedGreen(), delay);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    void ledOn(final Gpio led, int delay) throws IOException {
+        led.setValue(true);
+        Handler handler = new Handler();
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    led.setValue(false);
+                    led.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        },delay);
     }
 
 }

@@ -1,4 +1,4 @@
-# Google Cloud IoT Core Demo Android Things App
+# Google Cloud IoT Core Provisioning Android Things Library and Demo App
 
 Android Things that demonstrating how to provision an device into [Google Cloud IoT Core](https://cloud.google.com/iot-core/).
 
@@ -72,25 +72,24 @@ https://developer.android.com/things/hardware/raspberrypi.html
 ### Rainbow HAT
 Optionally you can attached a Rainbow Hat to your Raspberry Pi 3 and receive visual feedback.
 
+*Led Strip:* The led strip driver is flaky.  It often throws exceptions when the device first starts. So I add led indicators as well.  They just aren't as fun!
+
 #### LED Indicators
-Red - Device is not ready to operate.  Should only flash for a brief sec on startup.  If persists longer, something is mis-configured (see setup).
+Led Strip Red/Led Red - Device is not ready to operate.  Should only flash for a brief sec on startup.  If persists longer, something is mis-configured (see setup).
 
-Blue - Device is ready for provisioning or operation. The LED will flash blue for 5 seconds.
+Led Strip Blue/Led Blue - Device is ready for provisioning or operation. The LED will flash blue for 5 seconds.
 
-Green - Device is publishing telemetry data to IOT Core
+Led Strip Green/Led Green - Device is publishing telemetry data to IOT Core
 
-Yellow - Device is receiving a config update from IOT Core.
+Led Strip Yellow/Led Blue - Device is receiving a config update from IOT Core.
 
-Rainbow - Device is receiving an HTTP `OPTIONS` request
+Led Strip Rainbow/Led RGB - Device is receiving an HTTP `OPTIONS` request
 
 Under normal operation, you should see the following Indicators.
 
 **Unprovisioned Device**
-- Red
 - Blue (5 seconds)
 
 **Provisioned Device**
-- Red
-- Blue
 - Yellow (once on startup and every time a new config is published)
 - Green (every 1 min)
