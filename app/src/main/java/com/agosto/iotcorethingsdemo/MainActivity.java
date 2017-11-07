@@ -33,9 +33,12 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
 import java.io.IOException;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.Locale;
 import java.util.TimeZone;
 
@@ -77,6 +80,8 @@ public class MainActivity extends AppCompatActivity {
         textView.setText(deviceSettings.projectId);
         textView = findViewById(R.id.publishDate);
         textView.setText(mLastPublish);
+        textView = findViewById(R.id.debugInfo);
+        textView.setText(logLocalIpAddresses());
     }
 
     /**
@@ -122,6 +127,7 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         updateSettingsUI();
+        Log.d(TAG,logLocalIpAddresses().replace("\n", "; "));
         mIotCoreProvisioning.resume();
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         localBroadcastManager.registerReceiver(onUpdateReceiver,new IntentFilter(DeviceEvents.DEVICE_PROVISIONED));
@@ -258,6 +264,30 @@ public class MainActivity extends AppCompatActivity {
             }
             mLedstrip = null;
         }
+    }
+
+    /**
+     * get a list of ip addresses for debugging purposes.
+     * @return string of ip network address separated by new line charcaters.
+     */
+    public String logLocalIpAddresses() {
+        Enumeration<NetworkInterface> nwis;
+        StringBuilder stringBuilder = new StringBuilder();
+        try {
+            nwis = NetworkInterface.getNetworkInterfaces();
+            while (nwis.hasMoreElements()) {
+
+                NetworkInterface ni = nwis.nextElement();
+                for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
+                    stringBuilder.append(String.format(Locale.getDefault(),"%s (%d): %s\n", ni.getDisplayName(), ia.getNetworkPrefixLength(), ia.getAddress()));
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        //Log.d(TAG,stringBuilder.toString());
+        return stringBuilder.toString();
     }
 
     // TODO: move rainbow hat methods into another class.
