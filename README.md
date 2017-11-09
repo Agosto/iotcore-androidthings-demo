@@ -2,7 +2,7 @@
 
 Android Things that demonstrating how to provision an device into [Google Cloud IoT Core](https://cloud.google.com/iot-core/).
 
-This project is the device half of the Cloud IoT Core demo. The provisioning mobile app can be found here [TODO: LINK TO ANDROID APP](TODO)
+This project is the device half of the Cloud IoT Core demo. The provisioning mobile app can be found here (*coming soon*)
 
 ## What You Need
 
@@ -14,7 +14,7 @@ This project is the device half of the Cloud IoT Core demo. The provisioning mob
 
 ## Device Setup
 
-###For Development:
+### For Development:
 
 1. Flash Your Raspberry Pi with the latest Android Things Image:
 https://developer.android.com/things/hardware/raspberrypi.html
@@ -25,9 +25,9 @@ https://developer.android.com/things/hardware/raspberrypi.html
 
 4. Build/Run!
 
-###For Demo Only:
+### For Demo Only:
 
-1.  Download Iot Core Provisioning Demo Image
+1.  Download Iot Core Provisioning Demo Image (*coming soon*)
 
 2.  Follow the same step as above to flash your device but use the download image instead.
 
