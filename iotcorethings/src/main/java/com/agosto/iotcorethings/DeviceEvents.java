@@ -1,9 +1,7 @@
 package com.agosto.iotcorethings;
 
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.support.v4.content.LocalBroadcastManager;
 
 public class DeviceEvents {
@@ -28,21 +26,4 @@ public class DeviceEvents {
     public void broadCastIdentifyRequest() {
         mLocalBroadcastManager.sendBroadcast(new Intent(IDENTIFY_REQUEST));
     }
-
-    /*public void registerReceiver(BroadcastReceiver receiver, String event) {
-        mLocalBroadcastManager.registerReceiver(receiver,new IntentFilter(event));
-    }
-
-    public void registerProvisionedReceiver(BroadcastReceiver receiver) {
-        registerReceiver(receiver,DEVICE_PROVISIONED);
-    }
-
-    public void registerIdentifyRequestReceiver(BroadcastReceiver receiver) {
-        registerReceiver(receiver,IDENTIFY_REQUEST);
-    }
-
-    public void unregisterReceiver(BroadcastReceiver receiver) {
-        mLocalBroadcastManager.unregisterReceiver(receiver);
-    }*/
-
 }
