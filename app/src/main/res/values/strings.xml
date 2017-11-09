@@ -1,4 +1,10 @@
 <resources>
     <string name="app_name">IOT Core Things Demo</string>
     <string name="config_url">http://%1$s:8080</string>
+    <string name="device_id">Device Id:</string>
+    <string name="server">Server:</string>
+    <string name="project_id">Project Id:</string>
+    <string name="registry_id">Registry Id:</string>
+    <string name="last_publish">Last Publish:</string>
+    <string name="debug">Debug:</string>
 </resources>
