@@ -1,17 +1,17 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 27
     //buildToolsVersion "26.0.1"
 
     def versionMajor = 0
     def versionMinor = 9
-    def versionPatch = 4
+    def versionPatch = 5
     def versionBuild = 0 // bump for dogfood builds, public betas, etc.
 
     defaultConfig {
         minSdkVersion 24
-        targetSdkVersion 26
+        targetSdkVersion 27
         versionCode 1
         versionName "1.0"
         versionCode versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100 + versionBuild
@@ -30,12 +30,12 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     testImplementation 'junit:junit:4.12'
-    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support:appcompat-v7:27.0.0'
     compileOnly 'com.google.android.things:androidthings:0.5.1-devpreview'
     api 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.1.0'
     api 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
-    implementation 'io.jsonwebtoken:jjwt:0.7.0'
-    implementation 'com.google.code.gson:gson:2.8.1'
+    api 'io.jsonwebtoken:jjwt:0.7.0'
+    api 'com.google.code.gson:gson:2.8.1'
     api 'com.google.android.things.contrib:driver-rainbowhat:0.5'
 
 }

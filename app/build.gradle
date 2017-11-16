@@ -1,18 +1,18 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 26
+    compileSdkVersion 27
     //buildToolsVersion "26.0.1"
 
     def versionMajor = 1
     def versionMinor = 0
-    def versionPatch = 1
+    def versionPatch = 2
     def versionBuild = 1 // bump for dogfood builds, public betas, etc.
 
     defaultConfig {
         applicationId "com.agosto.iotcorethingsdemo"
         minSdkVersion 24
-        targetSdkVersion 26
+        targetSdkVersion 27
         versionCode versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100 + versionBuild
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -50,7 +50,7 @@ dependencies {
     androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    implementation 'com.android.support:appcompat-v7:26.1.0'
+    implementation 'com.android.support:appcompat-v7:27.0.0'
     implementation 'com.android.support.constraint:constraint-layout:1.0.2'
     implementation 'com.google.code.gson:gson:2.8.1'
     compileOnly 'com.google.android.things:androidthings:0.5.1-devpreview'
