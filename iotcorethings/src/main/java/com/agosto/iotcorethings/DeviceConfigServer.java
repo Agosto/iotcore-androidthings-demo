@@ -1,10 +1,8 @@
 package com.agosto.iotcorethings;
 
-import android.content.Context;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.google.android.things.devicemanagement.DeviceManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -147,7 +145,7 @@ public class DeviceConfigServer implements Runnable {
                 Log.d(TAG,"Resetting Device");
                 mDeviceSettings.reset();
                 DeviceKeys.deleteKeys();
-                DeviceManager.reboot();
+                mDeviceEvents.broadCastDeviceReset();
             }
 
             if(method.equals("OPTIONS")) {

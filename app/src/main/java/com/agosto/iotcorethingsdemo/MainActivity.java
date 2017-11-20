@@ -22,8 +22,8 @@ import com.agosto.iotcorethings.IotCoreDeviceConfig;
 import com.agosto.iotcorethings.IotCoreMqtt;
 import com.agosto.iotcorethings.IotCoreProvisioning;
 import com.google.android.things.contrib.driver.apa102.Apa102;
-import com.google.android.things.contrib.driver.pwmspeaker.Speaker;
 import com.google.android.things.contrib.driver.rainbowhat.RainbowHat;
+import com.google.android.things.devicemanagement.DeviceManager;
 import com.google.android.things.pio.Gpio;
 import com.google.gson.Gson;
 
@@ -132,6 +132,7 @@ public class MainActivity extends AppCompatActivity {
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         localBroadcastManager.registerReceiver(onUpdateReceiver,new IntentFilter(DeviceEvents.DEVICE_PROVISIONED));
         localBroadcastManager.registerReceiver(onIdentifyRequest,new IntentFilter(DeviceEvents.IDENTIFY_REQUEST));
+        localBroadcastManager.registerReceiver(onResetRequest,new IntentFilter(DeviceEvents.DEVICE_RESET));
         if(mIotCoreProvisioning.isConfigured()) {
             connectIotCore();
         } else {
@@ -146,6 +147,7 @@ public class MainActivity extends AppCompatActivity {
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         localBroadcastManager.unregisterReceiver(onUpdateReceiver);
         localBroadcastManager.unregisterReceiver(onIdentifyRequest);
+        localBroadcastManager.unregisterReceiver(onResetRequest);
         disconnectTotCore();
         super.onPause();
     }
@@ -166,6 +168,13 @@ public class MainActivity extends AppCompatActivity {
             blueLedOn(4000);
             redLedOn(3000);
 
+        }
+    };
+
+    private BroadcastReceiver onResetRequest = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            DeviceManager.reboot();
         }
     };
 

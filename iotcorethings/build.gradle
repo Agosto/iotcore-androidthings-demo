@@ -6,11 +6,11 @@ android {
 
     def versionMajor = 0
     def versionMinor = 9
-    def versionPatch = 5
+    def versionPatch = 6
     def versionBuild = 0 // bump for dogfood builds, public betas, etc.
 
     defaultConfig {
-        minSdkVersion 24
+        minSdkVersion 23
         targetSdkVersion 27
         versionCode 1
         versionName "1.0"
@@ -30,12 +30,10 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     testImplementation 'junit:junit:4.12'
-    implementation 'com.android.support:appcompat-v7:27.0.0'
-    compileOnly 'com.google.android.things:androidthings:0.5.1-devpreview'
+    implementation 'com.android.support:appcompat-v7:27.0.1'
     api 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.1.0'
     api 'org.eclipse.paho:org.eclipse.paho.android.service:1.1.1'
     api 'io.jsonwebtoken:jjwt:0.7.0'
     api 'com.google.code.gson:gson:2.8.1'
-    api 'com.google.android.things.contrib:driver-rainbowhat:0.5'
 
 }
