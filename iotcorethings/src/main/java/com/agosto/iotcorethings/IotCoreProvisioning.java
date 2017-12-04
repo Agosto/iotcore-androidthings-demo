@@ -5,6 +5,12 @@ import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.net.wifi.WifiManager;
 import android.text.format.Formatter;
+import android.util.Log;
+
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.util.Enumeration;
+import java.util.Locale;
 
 import static android.content.Context.BLUETOOTH_SERVICE;
 import static android.content.Context.WIFI_SERVICE;
@@ -12,6 +18,7 @@ import static android.content.Context.WIFI_SERVICE;
 
 public class IotCoreProvisioning {
     private static IotCoreProvisioning ourInstance = null;
+    private static final String TAG = "IotCoreProvisioning";
 
     private DeviceConfigServer mWebServer;
     private EddystoneAdvertiser mEddystoneAdvertiser;
@@ -35,10 +42,14 @@ public class IotCoreProvisioning {
         mDeviceKeys = new DeviceKeys();
         mDeviceSettings.encodedPublicKey = "-----BEGIN CERTIFICATE-----\n"+mDeviceKeys.encodedCertificate()+"-----END CERTIFICATE-----\n";
 
+        mDeviceSettings.ipAddress = getIpAddress();
         // config server
-        WifiManager wm = (WifiManager) context.getSystemService(WIFI_SERVICE);
+        /*WifiManager wm = (WifiManager) context.getApplicationContext().getSystemService(WIFI_SERVICE);
         if(wm != null) {
             mDeviceSettings.ipAddress = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
+            mWebServer = new DeviceConfigServer(8080, mDeviceSettings, new DeviceEvents(context));
+        }*/
+        if(!mDeviceSettings.ipAddress.isEmpty()) {
             mWebServer = new DeviceConfigServer(8080, mDeviceSettings, new DeviceEvents(context));
         }
 
@@ -49,6 +60,30 @@ public class IotCoreProvisioning {
             mEddystoneAdvertiser = new EddystoneAdvertiser(bluetoothAdapter);
         }
     }
+
+    private String getIpAddress() {
+        Enumeration<NetworkInterface> nwis;
+        try {
+            nwis = NetworkInterface.getNetworkInterfaces();
+            while (nwis.hasMoreElements()) {
+                NetworkInterface ni = nwis.nextElement();
+                Log.d(TAG,String.format("testing %s",ni));
+                if(ni.getDisplayName().equals("eth0") || ni.getDisplayName().equals("wlan0")) {
+                    for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
+                        if(ia.getNetworkPrefixLength()==24) {
+                            Log.d(TAG,String.format("found ip %s",ia.getAddress().getHostAddress()));
+                            return ia.getAddress().getHostAddress();
+                        }
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return "";
+    }
+
 
     public boolean isConfigured() {
         return mDeviceSettings.isConfigured();

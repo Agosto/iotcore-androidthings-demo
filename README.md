@@ -19,7 +19,7 @@ This project is the device half of the Cloud IoT Core demo. The provisioning mob
 1. Flash Your Raspberry Pi with the latest Android Things Image:
 https://developer.android.com/things/hardware/raspberrypi.html
 
-2. Connect device to your wifi network
+2. Connect device to your wifi network or ethernet
 
 3. Connect with ADB
 
@@ -31,7 +31,7 @@ https://developer.android.com/things/hardware/raspberrypi.html
 
 2.  Follow the same step as above to flash your device but use the download image instead.
 
-3.  Add device to wifi network (same as above)
+3.  Add device to wifi network (same as above) or connect via ethernet
 
 4.  Reboot until you see a blue light flash (then it's ready)
 
@@ -56,7 +56,7 @@ https://developer.android.com/things/hardware/raspberrypi.html
 ```json
 {
   "projectId": "cloud-iot-demo",
-  "registryId": "a-gateways",
+  "registryId": "a-gateways"
 }
 ```
 
