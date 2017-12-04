@@ -60,7 +60,7 @@ https://developer.android.com/things/hardware/raspberrypi.html
 }
 ```
 
-- `OPTIONS` acts as normal but also lights the LED (if connected) raindbow colors.
+- `OPTIONS` acts as normal but also lights the LED (if connected) rainbow colors.
 - `DELETE` deletes key pairs and device settings and reboots device
 
 4. Once device has a `projectId` and `registryId` (either after a POST or present on startup), then device will:
