@@ -23,7 +23,7 @@ import com.agosto.iotcorethings.IotCoreMqtt;
 import com.agosto.iotcorethings.IotCoreProvisioning;
 import com.google.android.things.contrib.driver.apa102.Apa102;
 import com.google.android.things.contrib.driver.rainbowhat.RainbowHat;
-import com.google.android.things.devicemanagement.DeviceManager;
+import com.google.android.things.device.DeviceManager;
 import com.google.android.things.pio.Gpio;
 import com.google.gson.Gson;
 
@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver onResetRequest = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            DeviceManager.reboot();
+            new DeviceManager().reboot();
         }
     };
 

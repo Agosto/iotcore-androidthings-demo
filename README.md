@@ -6,11 +6,21 @@ This project is the device half of the Cloud IoT Core demo. The provisioning mob
 
 ## What You Need
 
+### Raspberry Pi 
+https://developer.android.com/things/hardware/raspberrypi-kit.html
+
 - Raspberry Pi 3 Model B (other models might work but have not been tested)
 - MicroSD card of 16 GB or higher
 - Micro USB power adapter.
 - (optional) HDMI display and cable
 - (optional) [Rainbow HAT](https://shop.pimoroni.com/products/rainbow-hat-for-android-things)
+
+### NXP Pico i.MX7D
+https://developer.android.com/things/hardware/imx7d-kit.html
+
+- You need one of the NXP Pico i.MX7D kits found here: (https://www.technexion.com/solutions/iot-development-platform/android-things/)
+- All you require is a board and an Antenna for wifi.
+- (optional) Rainbowhat, display, and camera.   
 
 ## Device Setup
 
