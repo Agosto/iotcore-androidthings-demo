@@ -128,7 +128,7 @@ public class MainActivity extends AppCompatActivity {
         super.onResume();
         updateSettingsUI();
         Log.d(TAG,logLocalIpAddresses().replace("\n", "; "));
-        mIotCoreProvisioning.resume();
+        mIotCoreProvisioning.resume(this);
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         localBroadcastManager.registerReceiver(onUpdateReceiver,new IntentFilter(DeviceEvents.DEVICE_PROVISIONED));
         localBroadcastManager.registerReceiver(onIdentifyRequest,new IntentFilter(DeviceEvents.IDENTIFY_REQUEST));
@@ -236,12 +236,22 @@ public class MainActivity extends AppCompatActivity {
                 DeviceSettings deviceSettings = mIotCoreProvisioning.getDeviceSettings();
                 try {
                     String payload = String.format(Locale.getDefault(),"%s %s", deviceSettings.deviceId, getISO8601StringForDate(new Date()));
-                    Log.d(TAG,"Publishing message: " + payload);
+                    Log.d(TAG,"Publishing telemetry message: " + payload);
                     MqttMessage message = new MqttMessage(payload.getBytes());
                     message.setQos(1);
                     mMqttClient.publish(IotCoreMqtt.telemetryTopic(deviceSettings.deviceId), message);
                     mLastPublish = new Date().toString();
+
+                    DeviceState deviceState = new DeviceState();
+                    deviceState.currentTime = getISO8601StringForDate(new Date());
+                    payload = new Gson().toJson(deviceState);
+                    Log.d(TAG,"Publishing state message: " + payload);
+                    message = new MqttMessage(payload.getBytes());
+                    message.setQos(1);
+                    mMqttClient.publish(IotCoreMqtt.stateTopic(deviceSettings.deviceId), message);
+
                     updateSettingsUI();
+
                 } catch (MqttException e) {
                     Log.w(TAG,e.toString());
                     Log.d(TAG, "reconnecting...");
@@ -379,6 +389,7 @@ public class MainActivity extends AppCompatActivity {
 
     void ledOn(final Gpio led, int delay) throws IOException {
         led.setValue(true);
+        //led.close();
         Handler handler = new Handler();
         handler.postDelayed(new Runnable() {
             @Override
@@ -391,6 +402,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         },delay);
+    }
+
+
+    static class DeviceState {
+        String appVersion = BuildConfig.VERSION_NAME;
+        String currentTime = "";
     }
 
 }

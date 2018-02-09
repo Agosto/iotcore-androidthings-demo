@@ -3,17 +3,14 @@ package com.agosto.iotcorethings;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
-import android.net.wifi.WifiManager;
-import android.text.format.Formatter;
+import android.os.Handler;
 import android.util.Log;
 
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.util.Enumeration;
-import java.util.Locale;
 
 import static android.content.Context.BLUETOOTH_SERVICE;
-import static android.content.Context.WIFI_SERVICE;
 
 
 public class IotCoreProvisioning {
@@ -43,15 +40,8 @@ public class IotCoreProvisioning {
         mDeviceSettings.encodedPublicKey = "-----BEGIN CERTIFICATE-----\n"+mDeviceKeys.encodedCertificate()+"-----END CERTIFICATE-----\n";
 
         mDeviceSettings.ipAddress = getIpAddress();
-        // config server
-        /*WifiManager wm = (WifiManager) context.getApplicationContext().getSystemService(WIFI_SERVICE);
-        if(wm != null) {
-            mDeviceSettings.ipAddress = Formatter.formatIpAddress(wm.getConnectionInfo().getIpAddress());
-            mWebServer = new DeviceConfigServer(8080, mDeviceSettings, new DeviceEvents(context));
-        }*/
-        if(!mDeviceSettings.ipAddress.isEmpty()) {
-            mWebServer = new DeviceConfigServer(8080, mDeviceSettings, new DeviceEvents(context));
-        }
+
+        createConfigServer(context);
 
         // beacons
         BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(BLUETOOTH_SERVICE);
@@ -114,8 +104,29 @@ public class IotCoreProvisioning {
         }
     }
 
-    public void resume() {
+    public void resume(Context context) {
+        createConfigServer(context);
         enableConfigServer(!isConfigured());
+    }
+
+    private Handler mServerStartHandler = new Handler();
+
+    private void createConfigServer(Context context) {
+        mServerStartHandler.removeCallbacks(null);
+        if(mWebServer==null) {
+            mDeviceSettings.ipAddress = getIpAddress();
+            if (!mDeviceSettings.ipAddress.isEmpty()) {
+                mWebServer = new DeviceConfigServer(8080, mDeviceSettings, new DeviceEvents(context));
+            } else {
+                mServerStartHandler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        createConfigServer(context);
+                        enableConfigServer(!isConfigured());
+                    }
+                },10000);
+            }
+        }
     }
 
     public void pause() {

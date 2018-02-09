@@ -86,8 +86,22 @@ public class IotCoreMqtt {
         return String.format("/devices/%s/events", deviceId);
     }
 
+    /**
+     * device config topic to receive device config settings
+     * @param deviceId id of device in registry
+     * @return topic string
+     */
     public static String configTopic(String deviceId) {
         return String.format("/devices/%s/config", deviceId);
+    }
+
+    /**
+     * device state topic to publish state data
+     * @param deviceId id of device in registry
+     * @return topic string
+     */
+    public static String stateTopic(String deviceId) {
+        return String.format("/devices/%s/state", deviceId);
     }
 
 }
