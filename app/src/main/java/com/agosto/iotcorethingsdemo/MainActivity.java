@@ -174,7 +174,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver onResetRequest = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            new DeviceManager().reboot();
+            DeviceManager.getInstance().reboot();
         }
     };
 
