@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId "com.agosto.iotcorethingsdemo"
-        minSdkVersion 26
+        minSdkVersion 27
         targetSdkVersion 27
         versionCode versionMajor * 10000 + versionMinor * 1000 + versionPatch * 100 + versionBuild
         versionName "${versionMajor}.${versionMinor}.${versionPatch}"
@@ -62,4 +62,5 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     implementation project(':iotcorethings')
     implementation 'com.google.android.things.contrib:driver-rainbowhat:0.10'
+    implementation 'com.github.agosto-chrisdavis:blinkt-androidthings:v0.0.3'
 }

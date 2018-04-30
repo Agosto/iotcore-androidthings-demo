@@ -21,10 +21,8 @@ import com.agosto.iotcorethings.DeviceSettings;
 import com.agosto.iotcorethings.IotCoreDeviceConfig;
 import com.agosto.iotcorethings.IotCoreMqtt;
 import com.agosto.iotcorethings.IotCoreProvisioning;
-import com.google.android.things.contrib.driver.apa102.Apa102;
-import com.google.android.things.contrib.driver.rainbowhat.RainbowHat;
+import com.agosto.iotcorethingsdemo.hats.HatManager;
 import com.google.android.things.device.DeviceManager;
-import com.google.android.things.pio.Gpio;
 import com.google.gson.Gson;
 
 import org.eclipse.paho.client.mqttv3.IMqttMessageListener;
@@ -32,7 +30,6 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 
-import java.io.IOException;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.text.DateFormat;
@@ -49,18 +46,21 @@ public class MainActivity extends AppCompatActivity {
     IotCoreProvisioning mIotCoreProvisioning;
     MqttClient mMqttClient;
     Handler mPublishHandler = new Handler();
+    HatManager.HatController mHatController;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setTitle(getString(R.string.app_name) + " v" + BuildConfig.VERSION_NAME + " build " + BuildConfig.VERSION_CODE);
-        // need to restart app to get permission the first time
+
+        // change to rainbow hat or blinkt, depending on what you have attached.
+        mHatController = HatManager.getConnectedHat(HatManager.BLINKT);
+
         if (checkBluetoothSupport()) {
             mIotCoreProvisioning = IotCoreProvisioning.getInstance(this);
         } else {
-            // TODO: reboot? or restart app.
-            ledStripOn(10000, Color.RED);
+            mHatController.ledStripOn(10000, Color.RED);
             finish();
         }
     }
@@ -136,8 +136,7 @@ public class MainActivity extends AppCompatActivity {
         if(mIotCoreProvisioning.isConfigured()) {
             connectIotCore();
         } else {
-            ledStripOn(5000,Color.BLUE);
-            blueLedOn(5000);
+            mHatController.ledStripOn(5000,Color.BLUE);
         }
     }
 
@@ -163,10 +162,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver onIdentifyRequest = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
-            ledStripOn(5000);
-            greenLedOn(5000);
-            blueLedOn(4000);
-            redLedOn(3000);
+            mHatController.lightShow(5000);
 
         }
     };
@@ -197,8 +193,7 @@ public class MainActivity extends AppCompatActivity {
                     mPublishHandler.post(new Runnable() {
                         @Override
                         public void run() {
-                            ledStripOn(5000,Color.YELLOW);
-                            blueLedOn(5000);
+                            mHatController.ledStripOn(5000,Color.YELLOW);
                         }
                     });
                 }
@@ -231,8 +226,7 @@ public class MainActivity extends AppCompatActivity {
         mPublishHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                ledStripOn(5000, Color.GREEN);
-                greenLedOn(5000);
+                mHatController.ledStripOn(5000, Color.GREEN);
                 DeviceSettings deviceSettings = mIotCoreProvisioning.getDeviceSettings();
                 try {
                     String payload = String.format(Locale.getDefault(),"%s %s", deviceSettings.deviceId, getISO8601StringForDate(new Date()));
@@ -274,15 +268,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        ledStripOff();
-        if(mLedstrip!=null) {
-            try {
-                mLedstrip.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            mLedstrip = null;
-        }
+        mHatController.ledStripOff();
+        mHatController.close();
     }
 
     /**
@@ -308,102 +295,6 @@ public class MainActivity extends AppCompatActivity {
         //Log.d(TAG,stringBuilder.toString());
         return stringBuilder.toString();
     }
-
-    // TODO: move rainbow hat methods into another class.
-
-    private Apa102 mLedstrip;
-
-    public void ledStripOn(int offDelay) {
-        ledStripOn(offDelay,0);
-    }
-
-    public void ledStripOn(int offDelay, int color) {
-        Handler handler = new Handler();
-        try {
-            if(mLedstrip==null)
-                mLedstrip = RainbowHat.openLedStrip();
-            mLedstrip.setBrightness(5);
-            int[] rainbow = new int[RainbowHat.LEDSTRIP_LENGTH];
-            for (int i = 0; i < rainbow.length; i++) {
-                rainbow[i] = color == 0 ? Color.HSVToColor(255, new float[]{i * 360.f / rainbow.length, 1.0f, 1.0f}) : color;
-            }
-            mLedstrip.write(rainbow);
-            mLedstrip.write(rainbow);
-// Close the device when done.
-            //ledstrip.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                ledStripOff();
-            }
-        },offDelay);
-    }
-
-    public void ledStripOff() {
-        if(mLedstrip==null) {
-            return;
-        }
-        try {
-            //Apa102 ledstrip = RainbowHat.openLedStrip();
-            mLedstrip.setBrightness(0);
-            int[] rainbow = new int[RainbowHat.LEDSTRIP_LENGTH];
-            for (int i = 0; i < rainbow.length; i++) {
-                rainbow[i] = Color.BLACK;
-            }
-            mLedstrip.write(rainbow);
-            mLedstrip.write(rainbow);
-
-// Close the device when done.
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    void redLedOn(int delay) {
-        try {
-            ledOn(RainbowHat.openLedRed(), delay);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    void blueLedOn(int delay) {
-        try {
-            ledOn(RainbowHat.openLedBlue(), delay);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    void greenLedOn(int delay) {
-        try {
-            ledOn(RainbowHat.openLedGreen(), delay);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    void ledOn(final Gpio led, int delay) throws IOException {
-        led.setValue(true);
-        //led.close();
-        Handler handler = new Handler();
-        handler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    led.setValue(false);
-                    led.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
-        },delay);
-    }
-
 
     static class DeviceState {
         String appVersion = BuildConfig.VERSION_NAME;
