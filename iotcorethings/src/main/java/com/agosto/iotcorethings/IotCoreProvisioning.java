@@ -60,7 +60,8 @@ public class IotCoreProvisioning {
                 Log.d(TAG,String.format("testing %s",ni));
                 if(ni.getDisplayName().equals("eth0") || ni.getDisplayName().equals("wlan0")) {
                     for (InterfaceAddress ia : ni.getInterfaceAddresses()) {
-                        if(ia.getNetworkPrefixLength()==24) {
+                        int prefixLen = ia.getNetworkPrefixLength();
+                        if(prefixLen==24 || prefixLen==16) {
                             Log.d(TAG,String.format("found ip %s",ia.getAddress().getHostAddress()));
                             return ia.getAddress().getHostAddress();
                         }
