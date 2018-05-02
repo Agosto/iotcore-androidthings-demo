@@ -5,4 +5,5 @@
     <color name="colorAccent">#d22629</color>
     <color name="yellow">#f4c20d</color>
     <color name="green">#3cba54</color>
+    <color name="debug">#b7b3b3</color>
 </resources>

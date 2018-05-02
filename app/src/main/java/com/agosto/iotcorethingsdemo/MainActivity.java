@@ -48,12 +48,15 @@ public class MainActivity extends AppCompatActivity {
     Handler mPublishHandler = new Handler();
     HatManager.HatController mHatController;
 
+    TextView mDebugTextView;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         setTitle(getString(R.string.app_name) + " v" + BuildConfig.VERSION_NAME + " build " + BuildConfig.VERSION_CODE);
 
+        mDebugTextView = findViewById(R.id.debugInfo);
         // change to rainbow hat or blinkt, depending on what you have attached.
         mHatController = HatManager.getConnectedHat(HatManager.BLINKT);
 
@@ -78,10 +81,10 @@ public class MainActivity extends AppCompatActivity {
         textView.setText(deviceSettings.registryId);
         textView = findViewById(R.id.projectId);
         textView.setText(deviceSettings.projectId);
-        textView = findViewById(R.id.publishDate);
-        textView.setText(mLastPublish);
-        textView = findViewById(R.id.debugInfo);
-        textView.setText(logLocalIpAddresses());
+        //textView = findViewById(R.id.publishDate);
+        //textView.setText(mLastPublish);
+        //textView = findViewById(R.id.debugInfo);
+        //textView.setText(logLocalIpAddresses());
     }
 
     /**
@@ -109,14 +112,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         if (!bluetoothAdapter.isEnabled()) {
-            Log.d(TAG, "Bluetooth is currently disabled...enabling");
+            addConsoleLog("Bluetooth is currently disabled...enabling");
             bluetoothAdapter.enable();
         } else {
-            Log.d(TAG, "Bluetooth enabled...starting services");
+            addConsoleLog( "Bluetooth enabled...starting services");
         }
 
         if (!bluetoothAdapter.isMultipleAdvertisementSupported()) {
-            Log.d(TAG,"BLE advertising not supported on this device");
+            addConsoleLog("BLE advertising not supported on this device");
         }
 
         return true;
@@ -127,7 +130,7 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         updateSettingsUI();
-        Log.d(TAG,logLocalIpAddresses().replace("\n", "; "));
+        addConsoleLog(logLocalIpAddresses().replace("\n", "; "));
         mIotCoreProvisioning.resume(this);
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         localBroadcastManager.registerReceiver(onUpdateReceiver,new IntentFilter(DeviceEvents.DEVICE_PROVISIONED));
@@ -154,6 +157,7 @@ public class MainActivity extends AppCompatActivity {
     private BroadcastReceiver onUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            addConsoleLog("Device has been provisioned");
             updateSettingsUI();
             connectIotCore();
         }
@@ -163,7 +167,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             mHatController.lightShow(5000);
-
+            addConsoleLog("Device has been pinged for identification");
         }
     };
 
@@ -182,13 +186,15 @@ public class MainActivity extends AppCompatActivity {
         DeviceSettings deviceSettings = mIotCoreProvisioning.getDeviceSettings();
         DeviceKeys deviceKeys = mIotCoreProvisioning.getDeviceKeys();
         try {
+            addConsoleLog("Connecting to IoT Core MQTT");
             mMqttClient = IotCoreMqtt.connect(deviceSettings.projectId, deviceSettings.registryId, deviceSettings.deviceId, deviceKeys.getPrivateKey());
+            addConsoleLog("Subscribing config topic");
             mMqttClient.subscribe(IotCoreMqtt.configTopic(deviceSettings.deviceId), new IMqttMessageListener() {
                 @Override
                 public void messageArrived(String topic, MqttMessage message) throws Exception {
                     String json = new String(message.getPayload());
                     IotCoreDeviceConfig deviceConfig = new Gson().fromJson(json, IotCoreDeviceConfig.class);
-                    Log.d(TAG,json);
+                    addConsoleLogUI(json);
                     mIotCoreProvisioning.enableConfigServer(deviceConfig.configServerOn);
                     mPublishHandler.post(new Runnable() {
                         @Override
@@ -230,7 +236,7 @@ public class MainActivity extends AppCompatActivity {
                 DeviceSettings deviceSettings = mIotCoreProvisioning.getDeviceSettings();
                 try {
                     String payload = String.format(Locale.getDefault(),"%s %s", deviceSettings.deviceId, getISO8601StringForDate(new Date()));
-                    Log.d(TAG,"Publishing telemetry message: " + payload);
+                    addConsoleLog("Publishing telemetry message: " + payload);
                     MqttMessage message = new MqttMessage(payload.getBytes());
                     message.setQos(1);
                     mMqttClient.publish(IotCoreMqtt.telemetryTopic(deviceSettings.deviceId), message);
@@ -239,7 +245,7 @@ public class MainActivity extends AppCompatActivity {
                     DeviceState deviceState = new DeviceState();
                     deviceState.currentTime = getISO8601StringForDate(new Date());
                     payload = new Gson().toJson(deviceState);
-                    Log.d(TAG,"Publishing state message: " + payload);
+                    addConsoleLog("Publishing state message: " + payload);
                     message = new MqttMessage(payload.getBytes());
                     message.setQos(1);
                     mMqttClient.publish(IotCoreMqtt.stateTopic(deviceSettings.deviceId), message);
@@ -248,7 +254,7 @@ public class MainActivity extends AppCompatActivity {
 
                 } catch (MqttException e) {
                     Log.w(TAG,e.toString());
-                    Log.d(TAG, "reconnecting...");
+                    addConsoleLog( "reconnecting...");
                     connectIotCore();
                     //e.printStackTrace();
                     return;
@@ -299,6 +305,26 @@ public class MainActivity extends AppCompatActivity {
     static class DeviceState {
         String appVersion = BuildConfig.VERSION_NAME;
         String currentTime = "";
+    }
+
+    protected void addConsoleLog(String msg) {
+        Log.d(TAG,msg);
+        if(mDebugTextView.length() > 10000) {
+            mDebugTextView.setText(msg);
+        } else {
+            mDebugTextView.setText(String.format("%s\n%s", msg, mDebugTextView.getText()));
+        }
+    }
+
+    Handler uiHandler = new Handler();
+
+    protected void addConsoleLogUI(final String msg) {
+        uiHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                addConsoleLog(msg);
+            }
+        });
     }
 
 }

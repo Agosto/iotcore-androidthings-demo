@@ -2,7 +2,10 @@
 
 Android Things that demonstrating how to provision an device into [Google Cloud IoT Core](https://cloud.google.com/iot-core/).
 
-This project is the device half of the Cloud IoT Core demo. The provisioning mobile app can be found here (*coming soon*)
+This project is the device half of the Cloud IoT Core demo. The provisioning mobile app can be found here:
+
+- [Google Play](https://play.google.com/store/apps/details?id=com.agosto.iotcoreprovisioning)
+- [Github Project](https://github.com/Agosto/iotcore-provisioning-demo) 
 
 ## What You Need
 
