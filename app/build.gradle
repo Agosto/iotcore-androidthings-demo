@@ -5,8 +5,8 @@ android {
     //buildToolsVersion "26.0.1"
 
     def versionMajor = 1
-    def versionMinor = 0
-    def versionPatch = 5
+    def versionMinor = 1
+    def versionPatch = 1
     def versionBuild = 1 // bump for dogfood builds, public betas, etc.
 
     defaultConfig {
