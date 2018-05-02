@@ -279,7 +279,7 @@ public class MainActivity extends AppCompatActivity {
      * get a list of ip addresses for debugging purposes.
      * @return string of ip network address separated by new line charcaters.
      */
-    public String logLocalIpAddresses() {
+    public String localIpAddresses() {
         Enumeration<NetworkInterface> nwis;
         StringBuilder stringBuilder = new StringBuilder();
         try {
@@ -311,6 +311,7 @@ public class MainActivity extends AppCompatActivity {
         }
         addConsoleLog(message);
         textView.setText(message);
+        addConsoleLog(localIpAddresses());
     }
 
     public void onWifiConnect(View view) {
@@ -324,6 +325,8 @@ public class MainActivity extends AppCompatActivity {
 
         WifiManager wifiManager = (WifiManager)getSystemService(WIFI_SERVICE);
         if(wifiManager!=null) {
+            wifiManager.setWifiEnabled(true);
+            addConsoleLog("Wifi is enabled=" + wifiManager.isWifiEnabled());
             int netId = wifiManager.addNetwork(wifiConfig);
             wifiManager.disconnect();
             wifiManager.enableNetwork(netId, true);
