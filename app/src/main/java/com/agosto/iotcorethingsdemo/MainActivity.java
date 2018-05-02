@@ -8,11 +8,17 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import com.agosto.iotcorethings.DeviceEvents;
@@ -81,10 +87,6 @@ public class MainActivity extends AppCompatActivity {
         textView.setText(deviceSettings.registryId);
         textView = findViewById(R.id.projectId);
         textView.setText(deviceSettings.projectId);
-        //textView = findViewById(R.id.publishDate);
-        //textView.setText(mLastPublish);
-        //textView = findViewById(R.id.debugInfo);
-        //textView.setText(logLocalIpAddresses());
     }
 
     /**
@@ -118,9 +120,9 @@ public class MainActivity extends AppCompatActivity {
             addConsoleLog( "Bluetooth enabled...starting services");
         }
 
-        if (!bluetoothAdapter.isMultipleAdvertisementSupported()) {
+        /*if (!bluetoothAdapter.isMultipleAdvertisementSupported()) {
             addConsoleLog("BLE advertising not supported on this device");
-        }
+        }*/
 
         return true;
     }
@@ -130,7 +132,7 @@ public class MainActivity extends AppCompatActivity {
     public void onResume() {
         super.onResume();
         updateSettingsUI();
-        addConsoleLog(logLocalIpAddresses().replace("\n", "; "));
+        getConnectionInfo();
         mIotCoreProvisioning.resume(this);
         LocalBroadcastManager localBroadcastManager = LocalBroadcastManager.getInstance(this);
         localBroadcastManager.registerReceiver(onUpdateReceiver,new IntentFilter(DeviceEvents.DEVICE_PROVISIONED));
@@ -196,12 +198,7 @@ public class MainActivity extends AppCompatActivity {
                     IotCoreDeviceConfig deviceConfig = new Gson().fromJson(json, IotCoreDeviceConfig.class);
                     addConsoleLogUI(json);
                     mIotCoreProvisioning.enableConfigServer(deviceConfig.configServerOn);
-                    mPublishHandler.post(new Runnable() {
-                        @Override
-                        public void run() {
-                            mHatController.ledStripOn(5000,Color.YELLOW);
-                        }
-                    });
+                    mPublishHandler.post(() -> mHatController.ledStripOn(5000,Color.YELLOW));
                 }
             });
             startPublishing(1000);
@@ -298,8 +295,46 @@ public class MainActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        //Log.d(TAG,stringBuilder.toString());
         return stringBuilder.toString();
+    }
+
+    public void getConnectionInfo() {
+        String message = getString(R.string.no_connection);
+        TextView textView = findViewById(R.id.connnectionState);
+        ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        if(cm != null) {
+            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            boolean isConnected = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+            if (isConnected) {
+                message = "Connected to " + activeNetwork.getTypeName() + " " + activeNetwork.getExtraInfo();
+            }
+        }
+        addConsoleLog(message);
+        textView.setText(message);
+    }
+
+    public void onWifiConnect(View view) {
+        EditText editText = findViewById(R.id.ssid);
+        String ssid = editText.getText().toString();
+        editText = findViewById(R.id.wifiPass);
+        String key = editText.getText().toString();
+        WifiConfiguration wifiConfig = new WifiConfiguration();
+        wifiConfig.SSID = String.format("\"%s\"", ssid);
+        wifiConfig.preSharedKey = String.format("\"%s\"", key);
+
+        WifiManager wifiManager = (WifiManager)getSystemService(WIFI_SERVICE);
+        if(wifiManager!=null) {
+            int netId = wifiManager.addNetwork(wifiConfig);
+            wifiManager.disconnect();
+            wifiManager.enableNetwork(netId, true);
+            wifiManager.reconnect();
+            mPublishHandler.postDelayed(() -> { getConnectionInfo(); }, 5000);
+        }
+        findViewById(R.id.connectForm).setVisibility(View.GONE);
+    }
+
+    public void showConnectForm(View view) {
+        findViewById(R.id.connectForm).setVisibility(View.VISIBLE);
     }
 
     static class DeviceState {
@@ -319,12 +354,7 @@ public class MainActivity extends AppCompatActivity {
     Handler uiHandler = new Handler();
 
     protected void addConsoleLogUI(final String msg) {
-        uiHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                addConsoleLog(msg);
-            }
-        });
+        uiHandler.post(() -> addConsoleLog(msg));
     }
 
 }

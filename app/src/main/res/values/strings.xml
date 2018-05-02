@@ -7,4 +7,8 @@
     <string name="registry_id">Registry Id:</string>
     <string name="last_publish">Last Publish:</string>
     <string name="debug">Debug:</string>
+    <string name="connect">Connect</string>
+    <string name="unknown">Unknown</string>
+    <string name="ssid">SSID</string>
+    <string name="no_connection">No connection detected</string>
 </resources>

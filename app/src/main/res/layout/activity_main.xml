@@ -14,6 +14,56 @@
         android:orientation="vertical"
         android:layout_margin="16dp">
 
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:onClick="showConnectForm"
+                android:layout_marginTop="16dp"
+                android:src="@drawable/access_point_network"
+                android:id="@+id/connnectionIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                />
+
+            <TextView
+                android:layout_margin="16dp"
+                style="@style/Base.TextAppearance.AppCompat.Body1"
+                android:text="@string/unknown"
+                android:id="@+id/connnectionState"
+                android:layout_toRightOf="@id/connnectionIcon"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <LinearLayout
+                android:id="@+id/connectForm"
+                android:visibility="gone"
+                android:layout_below="@id/connnectionIcon"
+                android:orientation="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+            <EditText
+                android:hint="@string/ssid"
+                android:id="@+id/ssid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <EditText
+                android:hint="passkey"
+                android:id="@+id/wifiPass"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:text="@string/connect"
+                android:onClick="onWifiConnect"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+            </LinearLayout>
+
+        </RelativeLayout>
+
         <TextView
             android:layout_marginTop="16dp"
             style="@style/Base.TextAppearance.AppCompat.Body1"
